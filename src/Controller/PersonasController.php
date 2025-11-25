@@ -2,6 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Persona;
+use App\Repository\PersonaRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -11,37 +14,63 @@ use Symfony\Component\Routing\Annotation\Route;
 class PersonasController extends AbstractController
 {
     /**
-     * @Route("/personas/list", name="personas_list")
+     * @Route("/personas", name="personas_get")
      */
 
     //Podemos usar servicios metiendolos en el constructor o por parametro de entrada
     //Tenemos la clase request con la que podemos acceder a los datos que nos mandan en la peticion
-    public function list(Request $request, LoggerInterface $logger)
+    public function list(Request $request, PersonaRepository $personaRepository)
     {
         $nombre = $request->get('nombre', 'Manu');
-        $logger->info('List action called');
+        $personas = $personaRepository->findAll();
+        $personasAsArray = [];
+        foreach ($personas as $persona) {
+            $personasAsArray[] = [
+                'id' => $persona->getId(),
+                'nombre' => $persona->getNombre(),
+                'image' => $persona->getImage()
+            ];
+        }
         $response = new JsonResponse();
+        $response->setData(
+            [
+                'success' => true,
+                'data' => $personasAsArray
+            ]
+        );
+        return $response;
+    }
+
+    /**
+     * @Route("/persona/create", name="create_book")
+     */
+    public function createPersona(Request $request, EntityManagerInterface $em)
+    {
+        $persona = new Persona();
+        $response = new JsonResponse();
+        $nombre = $request->get('nombre', null);
+        if (empty($nombre)) {
+            $response->setData([
+                'success' => false,
+                'error' => 'Title cannot be empty',
+                'data' => null
+            ]);
+            return $response;
+        }
+
+        $persona->setNombre($nombre);
+        //No lo manda a base de datos, le dice que lo tiene que controlar este objeto persona
+        $em->persist($persona);
+        //Ahora ya todos los objetos persistidos los mandamos a base de datos
+        $em->flush();
+
         $response->setData(
             [
                 'success' => true,
                 'data' => [
                     [
-                        'dni' => 16640700,
-                        'nombre' => 'Eriz',
-                        'apellidos' => 'Godrovich',
-                        'municipio' => 'Fuenmayor'
-                    ],
-                    [
-                        'dni' => 16640600,
-                        'nombre' => 'Marta',
-                        'apellidos' => 'Frances',
-                        'municipio' => 'Lardero'
-                    ],
-                    [
-                        'dni' => 16640500,
-                        'nombre' => $nombre,
-                        'apellidos' => 'Olave',
-                        'municipio' => 'Vitoria'
+                        'id' => $persona->getId(),
+                        'nombre' => $persona->getNombre()
                     ]
                 ]
             ]
