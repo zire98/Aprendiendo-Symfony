@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Persona;
+use App\Form\Type\PersonaFormType;
 use App\Repository\PersonaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
@@ -26,13 +27,16 @@ class PersonasController extends AbstractFOSRestController
      * @Rest\View(serializerGroups={"persona"}, serializerEnableMaxDepthChecks=true)
      */
 
-    public function postAction(EntityManagerInterface $em)
+    public function postAction(EntityManagerInterface $em, Request $request)
     {
         $persona = new Persona();
-        $persona->setNombre('Installing FOS Rest Bundle');
-        $em->persist($persona);
-        $em->flush();
-
-        return $persona;
+        $form = $this->createForm(PersonaFormType::class, $persona);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($persona);
+            $em->flush();
+            return $persona;
+        }
+        return $form;
     }
 }
