@@ -1,8 +1,8 @@
-App\Entity\Persona:
+App\Form\Model\PersonaDto:
       properties:
             nombre:
-              - NotBlank: ~
-              - Length:
+            - NotBlank: ~
+            - Length:
                   min: 5
                   max: 50
                   minMessage: 'The name must be at least {{ limit }} characters long'
